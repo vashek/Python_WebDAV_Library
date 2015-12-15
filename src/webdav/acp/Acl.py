@@ -25,6 +25,7 @@ from webdav.acp.Ace import ACE
 from webdav import Constants
 from webdav.Connection import WebdavError
 from davlib import XML_DOC_HEADER
+from functools import reduce
 
 
 __version__ = "$LastChangedRevision$"
@@ -228,7 +229,7 @@ class ACL(object):
                 joinedAces[principalKey] = ACE()
                 joinedAces[principalKey].copy(ace)
         newAcl = ACL()
-        newAcl.addAces(joinedAces.values())
+        newAcl.addAces(list(joinedAces.values()))
         return newAcl
 
     def splitGrantDeny(self):
@@ -264,8 +265,8 @@ class ACL(object):
                         acesDeny[ace.principal.principalURL].grantDenies = []
                         acesDeny[ace.principal.principalURL].addGrantDeny(grantDeny)
         newAcl = ACL()
-        newAcl.addAces(acesGrant.values())
-        newAcl.addAces(acesDeny.values())
+        newAcl.addAces(list(acesGrant.values()))
+        newAcl.addAces(list(acesDeny.values()))
         return newAcl
 
     def isValid(self):

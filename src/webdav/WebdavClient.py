@@ -22,7 +22,7 @@ This module contains the classes ResourceStorer and CollectionStorer for accessi
 
 from davlib import XML_CONTENT_TYPE
 
-from urlparse import urlsplit
+from urllib.parse import urlsplit
 import re
 import types
 
@@ -148,7 +148,7 @@ class ResourceStorer(object):
         response = self.connection.options(self.path)
         result = {}
         result.update(response.msg)
-        self.connection.logger.debug("OPTION returns: " + str(result.keys()))
+        self.connection.logger.debug("OPTION returns: " + str(list(result.keys())))
         return result
         
     def _getAclSupportAvailable(self):
@@ -317,8 +317,8 @@ class ResourceStorer(object):
         @param lockToken: None or lock token from last lock request
         @type  lockToken: L{LockToken}
         """
-        assert not content or isinstance(content, types.UnicodeType) or\
-                isinstance(content, types.StringType), "Content is not a string: " + content.__class__.__name__
+        assert not content or isinstance(content, str) or\
+                isinstance(content, bytes), "Content is not a string: " + content.__class__.__name__
         assert lockToken == None or isinstance(lockToken, LockToken), \
                 "Invalid lockToken argument %s" % type(lockToken)
         header = {}
@@ -459,7 +459,7 @@ class ResourceStorer(object):
         @param properties: a map from property names to a String or
                            DOM element value for each property to add or update.
         """
-        assert isinstance(properties, types.DictType)
+        assert isinstance(properties, dict)
         assert lockToken == None or isinstance(lockToken, LockToken), \
                 "Invalid lockToken argument %s" % type(lockToken)
         header = {}
@@ -583,7 +583,7 @@ class CollectionStorer(ResourceStorer):
         @param name: leaf name of child resource
         @return: L{ResourceStorer} instance
         """
-        assert isinstance(name, types.StringType) or isinstance(name, types.UnicodeType)
+        assert isinstance(name, bytes) or isinstance(name, str)
         return ResourceStorer(self.url + name, self.connection, self.validateResourceNames)
              
     def validate(self):
@@ -606,7 +606,7 @@ class CollectionStorer(ResourceStorer):
         @param lockToken: None or token returned by last lock operation
         @type  lockToken: L{LockToken}
         """
-        assert isinstance(name, types.StringType) or isinstance(name, types.UnicodeType)
+        assert isinstance(name, bytes) or isinstance(name, str)
         assert lockToken == None or isinstance(lockToken, LockToken), \
                 "Invalid lockToken argument %s" % type(lockToken)
         header = {}
@@ -630,7 +630,7 @@ class CollectionStorer(ResourceStorer):
         @param lockToken: None or token returned by last lock operation
         @type  lockToken: L{LockToken}
         """
-        assert isinstance(name, types.StringType) or isinstance(name, types.UnicodeType)
+        assert isinstance(name, bytes) or isinstance(name, str)
         assert lockToken == None or isinstance(lockToken, LockToken), \
                 "Invalid lockToken argument %s" % type(lockToken)
         if self.validateResourceNames:
@@ -649,7 +649,7 @@ class CollectionStorer(ResourceStorer):
         @param lockToken: None or token returned by last lock operation
         @type  lockToken: L{LockToken}
         """
-        assert isinstance(name, types.StringType) or isinstance(name, types.UnicodeType)
+        assert isinstance(name, bytes) or isinstance(name, str)
         assert lockToken == None or isinstance(lockToken, LockToken), \
                 "Invalid lockToken argument %s" % type(lockToken)
         header = {}
@@ -672,7 +672,7 @@ class CollectionStorer(ResourceStorer):
         @return: Lock token string (automatically generated).
         @rtype: L{LockToken}
         """
-        assert isinstance(owner, types.StringType) or isinstance(owner, types.UnicodeType)
+        assert isinstance(owner, bytes) or isinstance(owner, str)
         response = self.connection.lock(self.path, owner, depth=Constants.HTTP_HEADER_DEPTH_INFINITY)
         return LockToken(self.url, response.locktoken)
         
@@ -690,7 +690,7 @@ class CollectionStorer(ResourceStorer):
                                             ns=Constants.NS_DAV,
                                             *LiveProperties.NAMES)
         result = {}
-        for path, properties in response.msr.items():
+        for path, properties in list(response.msr.items()):
             if path == self.path:      # omit this collection resource
                 continue
             ## some servers do not append a trailing slash to collection paths
@@ -709,7 +709,7 @@ class CollectionStorer(ResourceStorer):
         self.validate()
         collectionContents = []
         result = self.listResources()
-        for url, properties_ in result.items():
+        for url, properties_ in list(result.items()):
             if not self.path == url:
                 if properties_.getResourceType() == 'resource':
                     myWebDavStorer = ResourceStorer(url, self.connection, self.validateResourceNames)
@@ -725,7 +725,7 @@ class CollectionStorer(ResourceStorer):
         @param names: a list of property names
         @return: a map from resource URI to a map from property name to value.
         """
-        assert isinstance(names, types.ListType) or isinstance(names, types.TupleType), \
+        assert isinstance(names, list) or isinstance(names, tuple), \
                 "Argument name has type %s" % str(type(names))
         body = createFindBody(names, self.defaultNamespace)
         response = self.connection.propfind(self.path, body, depth=1)
@@ -743,7 +743,7 @@ class CollectionStorer(ResourceStorer):
         @param names: a list of property names
         @return: a map from resource URI to a map from property name to value.
         """
-        assert isinstance(names, types.ListType.__class__) or isinstance(names, types.TupleType), \
+        assert isinstance(names, types.ListType.__class__) or isinstance(names, tuple), \
                 "Argument name has type %s" % str(type(names))
         body = createFindBody(names, self.defaultNamespace)
         response = self.connection.propfind(self.path, body, depth=Constants.HTTP_HEADER_DEPTH_INFINITY)
@@ -784,9 +784,9 @@ class LockToken(object):
     __slots__ = ('url', 'token')
 
     def __init__(self, url, token):
-        assert isinstance(url, types.StringType) or isinstance(url, types.UnicodeType), \
+        assert isinstance(url, bytes) or isinstance(url, str), \
             "Invalid url argument %s" % type(url)
-        assert isinstance(token, types.StringType) or isinstance(token, types.UnicodeType), \
+        assert isinstance(token, bytes) or isinstance(token, str), \
             "Invalid lockToken argument %s" % type(token)
         self.url = url
         self.token = token
@@ -854,15 +854,15 @@ if __name__ == "__main__":
     import sys
  
     if len(sys.argv) == 1:
-        webdavUrl = raw_input("WebDAV URL:").strip()
+        webdavUrl = input("WebDAV URL:").strip()
     elif len(sys.argv) == 2 and sys.argv[1] not in ["-h", "-?", "--help", "--usage"]:
         webdavUrl = sys.argv[1]
     else:
-        print(
+        print((
             "usage: %s [URL]\n"
             "If no URL is passed, URL is prompted for.\n"
             "If URL ends in slash, directory is listed.\n" 
-            "If URL does not end in slash, file is downloaded.\n" % sys.argv[0])
+            "If URL does not end in slash, file is downloaded.\n" % sys.argv[0]))
         sys.exit(1)
     username = None
     password = None
@@ -877,15 +877,15 @@ if __name__ == "__main__":
                 for resource, properties in webdavConnection.getCollectionContents():
                     try:
                         print("")
-                        print(resource.path.encode(sys.getfilesystemencoding()))
-                        print(unicode(properties).encode(sys.getfilesystemencoding()))
+                        print((resource.path.encode(sys.getfilesystemencoding())))
+                        print((str(properties).encode(sys.getfilesystemencoding())))
                     except UnicodeEncodeError:
                         print("Cannot encode resource path or properties.")
             break # break out of the authorization failure counter
-        except AuthorizationError, e:
+        except AuthorizationError as e:
             if username is None or password is None:
-                username = raw_input("User Name:").strip()
-                password = raw_input("Password:").strip()
+                username = input("User Name:").strip()
+                password = input("Password:").strip()
     
             if e.authType == "Basic":
                 webdavConnection.connection.addBasicAuthorization(username, password)

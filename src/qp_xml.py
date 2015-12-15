@@ -37,7 +37,7 @@ class Parser:
   def find_prefix(self, prefix):
     elem = self.cur_elem
     while elem:
-      if elem.ns_scope.has_key(prefix):
+      if prefix in elem.ns_scope:
         return elem.ns_scope[prefix]
       elem = elem.parent
 
@@ -58,7 +58,7 @@ class Parser:
 
     ns = self.find_prefix(name[:idx])
     if ns is None:
-      raise error, 'namespace prefix ("%s") not found' % name[:idx]
+      raise error('namespace prefix ("%s") not found' % name[:idx])
 
     return ns, name[idx+1:]
 
@@ -77,7 +77,7 @@ class Parser:
     work_attrs = [ ]
 
     # scan for namespace declarations (and xml:lang while we're at it)
-    for name, value in attrs.items():
+    for name, value in list(attrs.items()):
       if name == 'xmlns':
         elem.ns_scope[''] = value
       elif name[:6] == 'xmlns:':
@@ -192,12 +192,12 @@ class _element:
 def _clean_tree(elem):
   elem.parent = None
   del elem.parent
-  map(_clean_tree, elem.children)
+  list(map(_clean_tree, elem.children))
 
 
 def _collect_recurse(elem, dict):
   dict[elem.ns] = None
-  for ns, name in elem.attrs.keys():
+  for ns, name in list(elem.attrs.keys()):
     dict[ns] = None
   for child in elem.children:
     _collect_recurse(child, dict)
@@ -207,7 +207,7 @@ def _collect_ns(elem):
   d = { '' : None }
   _collect_recurse(elem, d)
   del d['']    # make sure we don't pick up no-namespace entries
-  keys = d.keys()
+  keys = list(d.keys())
   for i in range(len(keys)):
     d[keys[i]] = i
   return d
@@ -217,13 +217,13 @@ def _dump_recurse(f, elem, namespaces, lang=None, dump_ns=0):
     f.write('<ns%d:%s' % (namespaces[elem.ns], elem.name))
   else:
     f.write('<' + elem.name)
-  for (ns, name), value in elem.attrs.items():
+  for (ns, name), value in list(elem.attrs.items()):
     if ns:
       f.write(' ns%d:%s="%s"' % (namespaces[ns], name, value))
     else:
       f.write(' %s="%s"' % (name, value))
   if dump_ns:
-    for ns, id in namespaces.items():
+    for ns, id in list(namespaces.items()):
       f.write(' xmlns:ns%d="%s"' % (id, ns))
   if elem.lang != lang:
     f.write(' xml:lang="%s"' % elem.lang)

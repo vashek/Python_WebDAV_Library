@@ -27,6 +27,7 @@ import types
 
 from webdav import Constants
 from davlib import XML_CONTENT_TYPE, XML_DOC_HEADER
+from functools import reduce
 
 
 class VersionHandler(object):
@@ -92,7 +93,7 @@ class VersionHandler(object):
         response = self.connection._request(Constants.METHOD_REPORT, self.path, body, headers)
         # response is multi-status
         result = []
-        for path, properties in response.msr.items():           
+        for path, properties in list(response.msr.items()):           
             # parse the successor-set value from XML into alist
             result.append( (path, str(properties[Constants.PROP_VERSION_NAME]), \
                             str(properties[Constants.PROP_CREATOR]), \
@@ -122,7 +123,7 @@ class VersionHandler(object):
         @param oldVersion: URL-path of a previous version of this VCR.
         """
         ## send an update request
-        assert isinstance(oldVersion, types.StringType) or isinstance(oldVersion, types.UnicodeType)
+        assert isinstance(oldVersion, bytes) or isinstance(oldVersion, str)
         response = self.connection._request(Constants.METHOD_UPDATE, self.path,
                         _createUpdateBody(oldVersion), {})
         return response

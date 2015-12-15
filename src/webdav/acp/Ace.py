@@ -261,7 +261,7 @@ class ACE(object):
         @param grantDenies: Grant or deny clauses.
         @type  grantDenies: sequence of L{GrantDeny} objects
         '''
-        map(lambda grantDeny: self.addGrantDeny(grantDeny), grantDenies)
+        list(map(lambda grantDeny: self.addGrantDeny(grantDeny), grantDenies))
 
     def delGrantDeny(self, grantDeny):
         '''Deletes the passed GrantDeny object from list.
@@ -290,4 +290,4 @@ class ACE(object):
         @param grantDenies: Grant or deny clauses.
         @type  grantDenies: sequence of L{GrantDeny} objects
         '''
-        map(lambda grantDeny: self.delGrantDeny(grantDeny), grantDenies)
+        list(map(lambda grantDeny: self.delGrantDeny(grantDeny), grantDenies))

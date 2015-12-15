@@ -26,7 +26,7 @@ from webdav import Constants, logger
 import sys
 import time
 import rfc822
-import urllib
+import urllib.request, urllib.parse, urllib.error
 # Handling Jython 2.5 bug concerning the date pattern
 # conversion in time.strptime
 try:
@@ -93,23 +93,23 @@ class MultiStatusResponse(dict):
             return Constants.CODE_SUCCEEDED
         if  len(self) > self.errorCount:
             return Constants.CODE_MULTISTATUS
-        return self.values()[0].code
+        return list(self.values())[0].code
 
     def getReason(self):
         result = ""
-        for response in self.values():
+        for response in list(self.values()):
             if response.code > Constants.CODE_LOWEST_ERROR:
                 result += response.reason
         return result                    
     
     def __str__(self):
-        result = u""
-        for key, value in self.items():
+        result = ""
+        for key, value in list(self.items()):
             if isinstance(value, PropertyResponse):
                 result += "Resource at %s has %d properties (%s) and %d errors\n" % (
-                    key, len(value), ", ".join([prop[1] for prop in value.keys()]), value.errorCount)
+                    key, len(value), ", ".join([prop[1] for prop in list(value.keys())]), value.errorCount)
             else:
-                result += "Resource at %s returned " % key + unicode(value)
+                result += "Resource at %s returned " % key + str(value)
         return result.encode(sys.stdout.encoding or "ascii", "replace")
     
     def _scan(self, root):
@@ -187,7 +187,7 @@ class PropertyResponse(dict):
 
     def __str__(self):
         result = ""
-        for value in self.values():
+        for value in list(self.values()):
             result += value.name + '= ' + value.textof() + '\n'
         result += self.getReason()
         return result
@@ -202,7 +202,7 @@ class PropertyResponse(dict):
     def getReason(self):
         result = ""
         if len(self.errors) > 0:
-            result = "Failed for: "   + repr(self.failedProperties.keys()) + "\n"
+            result = "Failed for: "   + repr(list(self.failedProperties.keys())) + "\n"
         for error in self.errors:
             result += "%s (%d).  " % (error.reason, error.code)
         for reason in self.reasons:
@@ -269,7 +269,7 @@ class LiveProperties(object):
                isinstance(propElement, qp_xml._element), \
                 "Argument properties has type %s" % str(type(properties))
         self.properties = dict()
-        for name, value in properties.items():
+        for name, value in list(properties.items()):
             if name[0] == Constants.NS_DAV and name[1] in self.NAMES:
                 self.properties[name[1]] = value
 
@@ -488,7 +488,7 @@ class Element(qp_xml._element):
     def __getattr__(self, name):
         if  (name == 'fullname'):
             return (self.__dict__['ns'], self.__dict__['name'])
-        raise AttributeError, name
+        raise AttributeError(name)
 
     def add(self, child):
         self.children.append(child)
@@ -527,14 +527,14 @@ def _scanOrError(elem, childName):
          
 def _unquoteHref(href):
     #print "*** Response HREF=", repr(href)
-    if type(href) == type(u""):
+    if type(href) == type(""):
         try: 
             href = href.encode('ascii')
         except UnicodeError:    # URL contains unescaped non-ascii character
             # handle bug in Tamino webdav server
-            return urllib.unquote(href)
-    href = urllib.unquote(href)
+            return urllib.parse.unquote(href)
+    href = urllib.parse.unquote(href)
     if Constants.CONFIG_UNICODE_URL:
-        return unicode(href, 'utf-8')
+        return str(href, 'utf-8')
     else:
-        return unicode(href, 'latin-1')
+        return str(href, 'latin-1')

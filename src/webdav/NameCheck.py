@@ -36,7 +36,7 @@ _unicodeUmlaut = [unicodedata.lookup("LATIN CAPITAL LETTER A WITH DIAERESIS"),
                   unicodedata.lookup("LATIN SMALL LETTER SHARP S")]
  
 # Define characters and character base sets
-_german  = u"".join(_unicodeUmlaut)
+_german  = "".join(_unicodeUmlaut)
 _alpha = "A-Za-z"
 _num = "0-9"
 _alphaNum = _alpha + _num
@@ -64,11 +64,11 @@ firstResourceChar = firstPropertyChar + _num + _tilde + _exclam + _dollar + \
 resourceChar = firstResourceChar + _space
 
 # Define regular expressions for name validation
-_propertyFirstRe = re.compile(u"^["+ firstPropertyChar +"]")
+_propertyFirstRe = re.compile("^["+ firstPropertyChar +"]")
 
-_propertyRe = re.compile(u"[^"+ propertyChar +"]")
-_resourceFirstRe = re.compile(u"^["+ firstResourceChar +"]")
-_resourceRe = re.compile(u"[^"+ resourceChar +"]")
+_propertyRe = re.compile("[^"+ propertyChar +"]")
+_resourceFirstRe = re.compile("^["+ firstResourceChar +"]")
+_resourceRe = re.compile("[^"+ resourceChar +"]")
                     
                     
 def isValidPropertyName(name):
@@ -156,10 +156,10 @@ def getResourceNameErrorPosition(name):
     illegalChar = _resourceRe.search(name)
     if illegalChar:
         result = (illegalChar.start(), \
-                  u"Illegal character '%s' at index %d." % \
+                  "Illegal character '%s' at index %d." % \
                       (name[illegalChar.start()], illegalChar.start()))
     elif not _resourceFirstRe.match(name):
-        result = (0, u"Illegal character '%s' at index %d." % (name[0], 0))
+        result = (0, "Illegal character '%s' at index %d." % (name[0], 0))
     return result
 
     

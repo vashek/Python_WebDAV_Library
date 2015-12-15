@@ -16,7 +16,7 @@
 """ Setup script to deploy the WebDAV client library. """
 
 
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 from distutils import core
 import os
 import shutil

@@ -58,7 +58,7 @@ def resourceExists(node, name = None, resourceType = PROP_RESOURCE_TYPE_RESOURCE
         myResourceType = ""
         if name:
             # make sure it's unicode:
-            if not isinstance(name, unicode):
+            if not isinstance(name, str):
                 name = name.decode(sys.getfilesystemencoding())
             url = node.url
             if url.endswith("/"):
@@ -76,7 +76,7 @@ def resourceExists(node, name = None, resourceType = PROP_RESOURCE_TYPE_RESOURCE
             exists = True
         else:
             exists = False
-    except WebdavError, wderr:
+    except WebdavError as wderr:
         if wderr.code == CODE_NOT_FOUND:
             # node doesn't exist -> exists = False:
             exists = False
@@ -145,7 +145,7 @@ def downloadCollectionContent(destinationPath, collectionToDownload):
     try:
         for item in itemsInPath:
             os.remove(os.path.join(destinationPath, item))
-    except OSError, e:
+    except OSError as e:
         if e.errno == 13:    # permission error
             sys.stderr.write("permission problem on '%s' in %s\n" % (e.filename, e.strerror))
         else:

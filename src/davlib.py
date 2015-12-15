@@ -12,8 +12,8 @@
 #   $Id: davlib.py 3182 2008-02-22 15:57:55 +0000 (Fr, 22 Feb 2008) schlauch $
 #
 
-import httplib
-import urllib
+import http.client
+import urllib.request, urllib.parse, urllib.error
 import string
 import types
 import mimetypes
@@ -28,7 +28,7 @@ XML_CONTENT_TYPE = 'text/xml; charset="utf-8"'
 BLOCKSIZE = 16384
 
 
-class HTTPProtocolChooser(httplib.HTTPSConnection):
+class HTTPProtocolChooser(http.client.HTTPSConnection):
     def __init__(self, *args, **kw):
         self.protocol = kw.pop('protocol')
         if self.protocol == "https":
@@ -36,18 +36,18 @@ class HTTPProtocolChooser(httplib.HTTPSConnection):
         else:
             self.default_port = 80
             
-        apply(httplib.HTTPSConnection.__init__, (self,) + args, kw)
+        http.client.HTTPSConnection.__init__(*(self,) + args, **kw)
 
     def connect(self):
         if self.protocol == "https":
-            httplib.HTTPSConnection.connect(self)
+            http.client.HTTPSConnection.connect(self)
         else:
-            httplib.HTTPConnection.connect(self)
+            http.client.HTTPConnection.connect(self)
 
 
 class HTTPConnectionAuth(HTTPProtocolChooser):
     def __init__(self, *args, **kw):
-        apply(HTTPProtocolChooser.__init__, (self,) + args, kw)
+        HTTPProtocolChooser.__init__(*(self,) + args, **kw)
 
         self.__username = None
         self.__password = None
@@ -140,7 +140,7 @@ def _extract_locktoken(root):
     return elem.textof()
 
 
-class DAVResponse(httplib.HTTPResponse):
+class DAVResponse(http.client.HTTPResponse):
     def parse_multistatus(self):
         self.root = qp_xml.Parser().parse(self)
         self.msr = _extract_msr(self.root)
@@ -167,12 +167,12 @@ class DAV(HTTPConnectionAuth):
         assert not (body and data), "cannot supply both body and data"
         if data:
             body = ''
-            for key, value in data.items():
-                if isinstance(value, types.ListType):
+            for key, value in list(data.items()):
+                if isinstance(value, list):
                     for item in value:
-                        body = body + '&' + key + '=' + urllib.quote(str(item))
+                        body = body + '&' + key + '=' + urllib.parse.quote(str(item))
                 else:
-                    body = body + '&' + key + '=' + urllib.quote(str(value))
+                    body = body + '&' + key + '=' + urllib.parse.quote(str(value))
             body = body[1:]
             headers['Content-Type'] = 'application/x-www-form-urlencoded'
 
@@ -273,13 +273,13 @@ class DAV(HTTPConnectionAuth):
 
     def getprops(self, url, *names, **kw):
         assert names, 'at least one property name must be provided'
-        if kw.has_key('ns'):
+        if 'ns' in kw:
             xmlns = ' xmlns:NS="' + kw['ns'] + '"'
             ns = 'NS:'
             del kw['ns']
         else:
             xmlns = ns = ''
-        if kw.has_key('depth'):
+        if 'depth' in kw:
             depth = kw['depth']
             del kw['depth']
         else:
@@ -293,7 +293,7 @@ class DAV(HTTPConnectionAuth):
 
     def delprops(self, url, *names, **kw):
         assert names, 'at least one property name must be provided'
-        if kw.has_key('ns'):
+        if 'ns' in kw:
             xmlns = ' xmlns:NS="' + kw['ns'] + '"'
             ns = 'NS:'
             del kw['ns']
@@ -310,13 +310,13 @@ class DAV(HTTPConnectionAuth):
     def setprops(self, url, *xmlprops, **props):
         assert xmlprops or props, 'at least one property must be provided'
         xmlprops = list(xmlprops)
-        if props.has_key('ns'):
+        if 'ns' in props:
             xmlns = ' xmlns:NS="' + props['ns'] + '"'
             ns = 'NS:'
             del props['ns']
         else:
             xmlns = ns = ''
-        for key, value in props.items():
+        for key, value in list(props.items()):
             if value:
                 xmlprops.append('<%s%s>%s</%s%s>' % (ns, key, value, ns, key))
             else:

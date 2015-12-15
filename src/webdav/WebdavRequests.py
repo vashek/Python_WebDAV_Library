@@ -50,17 +50,17 @@ class XmlNameSpaceMangler(object):
         @param defaultNameSpace:
         '''
         
-        assert isinstance(nameList, types.ListType) or isinstance(nameList, types.TupleType), \
+        assert isinstance(nameList, list) or isinstance(nameList, tuple), \
             "1. argument has wrong type %s" % type(nameList)
         self.shortcuts = {}
         self.defaultNameSpace = defaultNameSpace
         for name in nameList:
-            if  not isinstance(name, types.TupleType):
+            if  not isinstance(name, tuple):
                 name = (defaultNameSpace, name)            
-            assert isinstance(name, types.TupleType) and len(name) == 2, \
+            assert isinstance(name, tuple) and len(name) == 2, \
                          "Name is not a namespace, name tuple: %s" % type(name)
             validatePropertyName(name[1])
-            if  name[0] and not self.shortcuts.has_key(name[0]):
+            if  name[0] and name[0] not in self.shortcuts:
                 self.shortcuts[name[0]] = 'ns%d' % len(self.shortcuts)
     
     def getNameSpaces(self):
@@ -69,7 +69,7 @@ class XmlNameSpaceMangler(object):
         '''
         
         result = ""        
-        for namespace, short in self.shortcuts.items():
+        for namespace, short in list(self.shortcuts.items()):
             result += ' xmlns:%s="%s"' % (short, namespace)
         return result
     
@@ -80,9 +80,9 @@ class XmlNameSpaceMangler(object):
         '''
         
         elements = ""
-        for name in valueMap.keys():
+        for name in list(valueMap.keys()):
             fullname = name
-            if  isinstance(name, types.StringType):
+            if  isinstance(name, bytes):
                 fullname = (self.defaultNameSpace, name)        
             if  not fullname[0]:
                 tag = fullname[1]        
@@ -112,7 +112,7 @@ class XmlNameSpaceMangler(object):
         
         elements = ""
         for name in nameList:
-            if  isinstance(name, types.StringType):
+            if  isinstance(name, bytes):
                 name = (self.defaultNameSpace, name)        
             if  not name[0]:
                 tag = name[1]        
@@ -133,7 +133,7 @@ def createUpdateBody(propertyDict, defaultNameSpace = None):
     updateTag = 'D:' + Constants.TAG_PROPERTY_UPDATE
     setTag = 'D:' + Constants.TAG_PROPERTY_SET
     propTag = 'D:' + Constants.TAG_PROP
-    mangler = XmlNameSpaceMangler(propertyDict.keys(), defaultNameSpace)
+    mangler = XmlNameSpaceMangler(list(propertyDict.keys()), defaultNameSpace)
     return XML_DOC_HEADER + \
         '<%s xmlns:D="DAV:"><%s><%s %s>' % (updateTag, setTag, propTag, mangler.getNameSpaces()) + \
         mangler.getUpdateElements(propertyDict) + \

@@ -97,7 +97,7 @@ def prepareAcls(acls):
         Displaynames are added to the Principals where needed.
     @rtype:  C{list} of L{ACL} objects
     """
-    for acl in acls.keys():
+    for acl in list(acls.keys()):
         acls[acl] = acls[acl].joinGrantDeny()
         _insertAclDisplaynames(acls[acl])
     return acls

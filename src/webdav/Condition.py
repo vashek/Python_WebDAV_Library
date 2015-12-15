@@ -261,7 +261,7 @@ class BinaryRelationTerm(BinaryTerm):
     """
     def __init__(self, left, right):
         BinaryTerm.__init__(self, left, right)
-        if isinstance(self.left, types.StringType):     # Must be namespace + name pair
+        if isinstance(self.left, bytes):     # Must be namespace + name pair
             self.left = ('DAV:', self.left)
         if not isinstance(self.right, Literal):
             self.right = Literal(self.right)             # Must be Literal instance
@@ -338,7 +338,7 @@ class ContainsTerm(StringRelationTerm):
     (right child) string.
     """
     def __init__(self, left, right, isTaminoWorkaround=False):
-        right = unicode(right)
+        right = str(right)
         StringRelationTerm.__init__(self, left, "%" + right + "%")
         # Tamino workaround: operator like is not yet implemented:
         self.negate = 0
@@ -365,7 +365,7 @@ class ContainsTerm(StringRelationTerm):
         '''
         newResult = {}
         word = self.right.literal[1:-1]       # remove leading and trailing '%' characters (see __init__())
-        for url, properties in resultSet.items():
+        for url, properties in list(resultSet.items()):
             value = properties.get(self.left)
             if self.negate:
                 if not value or value.textof().find(word) < 0:
@@ -472,4 +472,4 @@ if  __name__ == '__main__':
     # use the example from the webdav specification
     condition = AndTerm( (MatchesTerm('getcontenttype', 'image/gif'), \
                 IsGreaterTerm('getcontentlength', 4096)) )
-    print "Where: " + condition.toXML()
+    print("Where: " + condition.toXML())

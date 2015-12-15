@@ -20,7 +20,7 @@ The contained class extends the HTTPConnection class for WebDAV support.
 """
 
 
-from httplib import HTTPConnection, CannotSendRequest, BadStatusLine, ResponseNotReady, IncompleteRead
+from http.client import HTTPConnection, CannotSendRequest, BadStatusLine, ResponseNotReady, IncompleteRead
 from copy import copy
 import base64   # for basic authentication
 try:
@@ -30,7 +30,7 @@ except ImportError: # for Python 2.4 compatibility
     hashlib = md5
 import mimetypes
 import os       # file handling
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import types
 import socket   # to "catch" socket.error
 from threading import RLock
@@ -93,7 +93,7 @@ class Connection(DAV):
             # encode message parts
             body = _toUtf8(body)
             url = _urlEncode(url)
-            for key, value in extraHeaders.items():
+            for key, value in list(extraHeaders.items()):
                 extraHeaders[key] = _toUtf8(value)
                 if key == "Destination": # copy/move header
                     if self.isConnectedToCatacomb:
@@ -106,7 +106,7 @@ class Connection(DAV):
                 try:
                     self.logger.debug("REQUEST Send %s for %s" % (method, url))
                     self.logger.debug("REQUEST Body: " + repr(body))
-                    for hdr in extraHeaders.items():
+                    for hdr in list(extraHeaders.items()):
                         self.logger.debug("REQUEST Header: " + repr(hdr))
                     self.request(method, url, body, extraHeaders)
                     response = self.getresponse()
@@ -147,7 +147,7 @@ class Connection(DAV):
             ## check for UTF-8 encoding
             try:
                 response.root = Parser().parse(content)
-            except ExpatError, error:
+            except ExpatError as error:
                 errorMessage = "Invalid XML document has been returned.\nReason: '%s'" % str(error.args)
                 raise WebdavError(errorMessage)
             try:
@@ -155,7 +155,7 @@ class Connection(DAV):
             except ResponseFormatError:
                 raise WebdavError("Invalid WebDAV response.")
             response.close()
-            for status in unicode(response.msr).strip().split('\n'):
+            for status in str(response.msr).strip().split('\n'):
                 self.logger.debug("RESPONSE (Multi-Status): " + status)
         elif method == 'LOCK' and status == Constants.CODE_SUCCEEDED:
             response.parse_lock_response()
@@ -180,7 +180,7 @@ class Connection(DAV):
             # Assemble header
             try:
                 size = os.path.getsize(srcfile.name)    
-            except os.error, error:
+            except os.error as error:
                 raise WebdavError("Cannot determine file size.\nReason: ''" % str(error.args))
             header["Content-length"] = str(size)
             
@@ -311,12 +311,12 @@ class AuthorizationError(WebdavError):
 
 def _toUtf8(body):
     if not body is None:
-        if type(body) == types.UnicodeType:
+        if type(body) == str:
             body = body.encode('utf-8')
     return body
 
 
 def _urlEncode(url):
-    if type(url) == types.UnicodeType:
+    if type(url) == str:
         url = url.encode('utf-8')
-    return urllib.quote(url)
+    return urllib.parse.quote(url)
