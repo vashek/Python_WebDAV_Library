@@ -107,7 +107,7 @@ def _extract_response(elem):
 
 def _extract_msr(root):
     if root.ns != 'DAV:' or root.name != 'multistatus':
-        raise 'invalid response: <DAV:multistatus> expected'
+        raise RuntimeError('invalid response: <DAV:multistatus> expected')
 
     msr = _multistatus(responses=[ ], responsedescription=None)
 
@@ -124,19 +124,19 @@ def _extract_msr(root):
 
 def _extract_locktoken(root):
     if root.ns != 'DAV:' or root.name != 'prop':
-        raise 'invalid response: <DAV:prop> expected'
+        raise RuntimeError('invalid response: <DAV:prop> expected')
     elem = root.find('lockdiscovery', 'DAV:')
     if not elem:
-        raise 'invalid response: <DAV:lockdiscovery> expected'
+        raise RuntimeError('invalid response: <DAV:lockdiscovery> expected')
     elem = elem.find('activelock', 'DAV:')
     if not elem:
-        raise 'invalid response: <DAV:activelock> expected'
+        raise RuntimeError('invalid response: <DAV:activelock> expected')
     elem = elem.find('locktoken', 'DAV:')
     if not elem:
-        raise 'invalid response: <DAV:locktoken> expected'
+        raise RuntimeError('invalid response: <DAV:locktoken> expected')
     elem = elem.find('href', 'DAV:')
     if not elem:
-        raise 'invalid response: <DAV:href> expected'
+        raise RuntimeError('invalid response: <DAV:href> expected')
     return elem.textof()
 
 
