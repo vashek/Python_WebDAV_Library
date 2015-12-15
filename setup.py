@@ -24,7 +24,7 @@ import subprocess
 import sys
 
 
-__version__ = "$LastChangedRevision$"
+__version__ = "0.4.2awingu1"
 
 
 class _BaseCommandRunner(core.Command):
@@ -122,7 +122,7 @@ def _createManifestTemplate(licenseFileName, changesFileName):
     manifestTemplateFileName = "MANIFEST.in"
     if not os.path.exists(manifestTemplateFileName):
         try:
-            fileHandle = open(manifestTemplateFileName, "wb")
+            fileHandle = open(manifestTemplateFileName, "w")
             fileHandle.write("include %s\n" % licenseFileName)
             fileHandle.write("include %s" % changesFileName)
             fileHandle.close()
