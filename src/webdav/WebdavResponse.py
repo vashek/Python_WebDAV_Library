@@ -25,7 +25,7 @@ import qp_xml
 from webdav import Constants, logger
 import sys
 import time
-import rfc822
+import email.utils
 import urllib.request, urllib.parse, urllib.error
 # Handling Jython 2.5 bug concerning the date pattern
 # conversion in time.strptime
@@ -365,7 +365,7 @@ class LiveProperties(object):
 
         if datetimeString:
             try:
-                result = rfc822.parsedate(datetimeString)
+                result = email.utils.parsedate(datetimeString)
                 if result is None:
                     result = _parseIso8601String(datetimeString) # Some servers like Tamino use ISO 8601
                 return time.struct_time(result)

@@ -27,7 +27,7 @@ nodes and from property (i.e. variable) and constant leaf nodes.
 import types
 from time import strftime
 from calendar import timegm
-from rfc822 import formatdate
+from email.utils import formatdate
 
 from webdav.Constants import NS_DAV, PROP_LAST_MODIFIED, DATE_FORMAT_ISO8601
 
