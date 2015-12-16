@@ -143,7 +143,7 @@ class Connection(DAV):
             raise WebdavError(reason, status)
         
         if status == Constants.CODE_MULTISTATUS:
-            content = response.read().decode('utf-8')
+            content = response.read()
             ## check for UTF-8 encoding
             try:
                 response.root = Parser().parse(content)
@@ -161,7 +161,7 @@ class Connection(DAV):
             response.parse_lock_response()
             response.close()
         elif method != 'GET' and method != 'PUT':
-            self.logger.debug("RESPONSE Body: " + response.read().decode('utf-8').strip())
+            self.logger.debug("RESPONSE Body: " + response.read().strip())
             response.close()
         return response
         
@@ -211,7 +211,7 @@ class Connection(DAV):
                 if status >= Constants.CODE_LOWEST_ERROR:     # error has occured ?
                     raise WebdavError(reason, status)
             finally:
-                self.logger.debug("RESPONSE Body: " + response.read().decode('utf-8'))
+                self.logger.debug("RESPONSE Body: " + response.read())
                 response.close()        
             return response
         finally:
