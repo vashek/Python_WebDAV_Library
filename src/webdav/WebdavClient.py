@@ -147,8 +147,9 @@ class ResourceStorer(object):
         """
         response = self.connection.options(self.path)
         result = {}
-        result.update(response.msg)
-        self.connection.logger.debug("OPTION returns: " + str(list(result.keys())))
+        for k, v in response.msg.items():
+            result[k.lower()] = v
+        self.connection.logger.debug("OPTION returns dict: %s" % repr(result))
         return result
         
     def _getAclSupportAvailable(self):
@@ -208,7 +209,7 @@ class ResourceStorer(object):
         """
         options = ''
         try:
-            options = self.options().get(option)
+            options = self.options().get(option.lower())
         except KeyError:
             return options
         return options  
@@ -398,7 +399,10 @@ class ResourceStorer(object):
         I.e., we simply try to identify the matching
         response for the resource. """
         
-        for key in [self.path, self.path[:-1], self.url]: # Server may return path or URL
+        self.connection.logger.debug(repr(list(response.msr.items())))
+        self.connection.logger.debug(repr(self.path))
+        self.connection.logger.debug(repr(self.path[:-1]))
+        for key in [self.path, self.path[:-1], self.path+'/', self.url]: # Server may return path or URL
             try:
                 return response.msr[key]
             except KeyError:

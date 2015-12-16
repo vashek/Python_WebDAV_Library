@@ -110,9 +110,10 @@ class XmlNameSpaceMangler(object):
         @param nameList:
         '''
         
+
         elements = ""
         for name in nameList:
-            if  isinstance(name, bytes):
+            if  isinstance(name, str):
                 name = (self.defaultNameSpace, name)        
             if  not name[0]:
                 tag = name[1]        

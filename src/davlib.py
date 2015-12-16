@@ -61,8 +61,8 @@ class HTTPConnectionAuth(HTTPProtocolChooser):
 
 def _parse_status(elem):
     text = elem.textof()
-    idx1 = string.find(text, ' ')
-    idx2 = string.find(text, ' ', idx1+1)
+    idx1 = text.find(' ')
+    idx2 = text.find(' ', idx1+1)
     return int(text[idx1:idx2]), text[idx2+1:]
 
 class _blank:
@@ -287,7 +287,7 @@ class DAV(HTTPConnectionAuth):
         assert not kw, 'unknown arguments'
         body = XML_DOC_HEADER + \
                '<DAV:propfind xmlns:DAV="DAV:"' + xmlns + '><DAV:prop><' + ns + \
-               string.joinfields(names, '/><' + ns) + \
+               ('/><' + ns).join(names) + \
                '/></DAV:prop></DAV:propfind>'
         return self.propfind(url, body, depth)
 
@@ -303,7 +303,7 @@ class DAV(HTTPConnectionAuth):
         body = XML_DOC_HEADER + \
                '<DAV:propertyupdate xmlns:DAV="DAV:"' + xmlns + \
                '><DAV:remove><DAV:prop><' + ns + \
-               string.joinfields(names, '/><' + ns) + \
+               ('/><' + ns).join(names) + \
                '/></DAV:prop></DAV:remove></DAV:propertyupdate>'
         return self.proppatch(url, body)
 
@@ -321,7 +321,7 @@ class DAV(HTTPConnectionAuth):
                 xmlprops.append('<%s%s>%s</%s%s>' % (ns, key, value, ns, key))
             else:
                 xmlprops.append('<%s%s/>' % (ns, key))
-        elems = string.joinfields(xmlprops, '')
+        elems = ''.join(xmlprops)
         body = XML_DOC_HEADER + \
                '<DAV:propertyupdate xmlns:DAV="DAV:"' + xmlns + \
                '><DAV:set><DAV:prop>' + \

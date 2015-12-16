@@ -110,7 +110,7 @@ class MultiStatusResponse(dict):
                     key, len(value), ", ".join([prop[1] for prop in list(value.keys())]), value.errorCount)
             else:
                 result += "Resource at %s returned " % key + str(value)
-        return result.encode(sys.stdout.encoding or "ascii", "replace")
+        return result
     
     def _scan(self, root):
         for child in root.children:
@@ -526,15 +526,7 @@ def _scanOrError(elem, childName):
     
          
 def _unquoteHref(href):
-    #print "*** Response HREF=", repr(href)
-    if type(href) == type(""):
-        try: 
-            href = href.encode('ascii')
-        except UnicodeError:    # URL contains unescaped non-ascii character
-            # handle bug in Tamino webdav server
-            return urllib.parse.unquote(href)
-    href = urllib.parse.unquote(href)
     if Constants.CONFIG_UNICODE_URL:
-        return str(href, 'utf-8')
+        return urllib.parse.unquote(href, encoding='utf-8')
     else:
-        return str(href, 'latin-1')
+        return urllib.parse.unquote(href, encoding='latin-1')

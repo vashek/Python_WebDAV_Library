@@ -47,13 +47,13 @@ class Parser:
     return None
 
   def process_prefix(self, name, use_default):
-    idx = string.find(name, ':')
+    idx = name.find(':')
     if idx == -1:
       if use_default:
         return self.find_prefix(''), name
       return '', name    # no namespace
 
-    if string.lower(name[:3]) == 'xml':
+    if name[:3].lower() == 'xml':
       return '', name    # name is reserved by XML. don't break out a NS.
 
     ns = self.find_prefix(name[:idx])
