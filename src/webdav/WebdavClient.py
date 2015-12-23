@@ -24,7 +24,7 @@ from davlib import XML_CONTENT_TYPE
 
 from urllib.parse import urlsplit
 import re
-import types
+from io import IOBase
 
 from webdav import Constants
 from webdav.WebdavResponse import LiveProperties
@@ -230,10 +230,9 @@ class ResourceStorer(object):
         Copies this resource.
         
         @param toUrl: target URI path
-        @param infinity: Flag that indicates that the complete content of collection is copied. (default)  
-        @type depth: C{boolean}
+        @param infinity: Flag that indicates that the complete content of collection is copied. (default)
         """
-        self.connection.logger.debug("Copy to " + repr(toUrl));
+        self.connection.logger.debug("Copy to " + repr(toUrl))
         _checkUrl(toUrl)
         if infinity:
             response = self.connection.copy(self.path, toUrl)
@@ -264,7 +263,7 @@ class ResourceStorer(object):
         
         @param toUrl: new (URI) path
         """
-        self.connection.logger.debug("Move to " + repr(toUrl));
+        self.connection.logger.debug("Move to " + repr(toUrl))
         _checkUrl(toUrl)
         response = self.connection.move(self.path, toUrl)
         if  response.status == Constants.CODE_MULTISTATUS and response.msr.errorCount > 0:
@@ -310,7 +309,7 @@ class ResourceStorer(object):
             header = lockToken.toHeader()
         self.connection.put(self.path, "", extra_hdrs=header)
 
-    def uploadContent(self, content, lockToken=None, extra_hdrs={}):
+    def uploadContent(self, content, lockToken=None, extra_hdrs=None):
         """
         Write binary data to permanent storage.
         
@@ -318,6 +317,8 @@ class ResourceStorer(object):
         @param lockToken: None or lock token from last lock request
         @type  lockToken: L{LockToken}
         """
+        if extra_hdrs is None:
+            extra_hdrs = {}
         assert not content or isinstance(content, str) or\
                 isinstance(content, bytes), "Content is not a string: " + content.__class__.__name__
         assert lockToken == None or isinstance(lockToken, LockToken), \
@@ -346,7 +347,7 @@ class ResourceStorer(object):
         @param lockToken: None or lock token from last lock request
         @type  lockToken: L{LockToken}
         """
-        assert isinstance(newFile, types.FileType), "Argument is no file: " + file.__class__.__name__
+        assert isinstance(newFile, IOBase), "Argument is no file: " + newFile.__class__.__name__
         assert lockToken == None or isinstance(lockToken, LockToken), \
                 "Invalid lockToken argument %s" % type(lockToken)
         header = {}
@@ -354,10 +355,12 @@ class ResourceStorer(object):
             header = lockToken.toHeader()
         self.connection.putFile(self.path, newFile, header=header)
 
-    def downloadContent(self, extra_hdrs={}):
+    def downloadContent(self, extra_hdrs=None):
         """
         Read binary data from permanent storage.
         """
+        if extra_hdrs is None:
+            extra_hdrs = {}
         response = self.connection.get(self.path, extra_hdrs=extra_hdrs)
         # TODO: Other interface ? return self.connection.getfile()
         return response
@@ -398,11 +401,8 @@ class ResourceStorer(object):
         correctly handle the depth header. 
         I.e., we simply try to identify the matching
         response for the resource. """
-        
-        self.connection.logger.debug(repr(list(response.msr.items())))
-        self.connection.logger.debug(repr(self.path))
-        self.connection.logger.debug(repr(self.path[:-1]))
-        for key in [self.path, self.path[:-1], self.path+'/', self.url]: # Server may return path or URL
+
+        for key in [self.path, self.path[:-1], self.path+'/', self.url, self.url+'/', self.url[:-1]]: # Server may return path or URL
             try:
                 return response.msr[key]
             except KeyError:
@@ -747,7 +747,7 @@ class CollectionStorer(ResourceStorer):
         @param names: a list of property names
         @return: a map from resource URI to a map from property name to value.
         """
-        assert isinstance(names, types.ListType.__class__) or isinstance(names, tuple), \
+        assert isinstance(names, list) or isinstance(names, tuple), \
                 "Argument name has type %s" % str(type(names))
         body = createFindBody(names, self.defaultNamespace)
         response = self.connection.propfind(self.path, body, depth=Constants.HTTP_HEADER_DEPTH_INFINITY)

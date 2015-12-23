@@ -20,7 +20,6 @@ This module handles WebDav server requests.
 """
 
 
-import types
 from webdav import Constants
 import qp_xml
 from tempfile import TemporaryFile
@@ -203,4 +202,3 @@ def createSearchBody(selects, path, conditions, defaultNameSpace = None):
                                                       depthTag, depthValue, depthTag, scopeTag, fromTag) + \
         '<%s>%s</%s>' % (whereTag, conditions.toXML(),whereTag) + \
         '</%s></%s>' % (basicTag, searchTag)
-        
