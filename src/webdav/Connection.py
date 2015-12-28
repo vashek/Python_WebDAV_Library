@@ -211,7 +211,7 @@ class Connection(DAV):
                 if status >= Constants.CODE_LOWEST_ERROR:     # error has occured ?
                     raise WebdavError(reason, status)
             finally:
-                self.logger.debug("RESPONSE Body: " + response.read())
+                self.logger.debug("RESPONSE Body: " + repr(response.read()))
                 response.close()        
             return response
         finally:
