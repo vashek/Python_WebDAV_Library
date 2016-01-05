@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
- 
+
 
 """
 This module contains the classes ResourceStorer and CollectionStorer for accessing WebDAV resources.
@@ -61,7 +61,7 @@ def parseDigestAuthInfo(authInfo):
     @see: L{AuthorizationError<webdav.Connection.AuthorizationError>} 
     or the main function of this module.
     """
-    
+
     info = dict()
     info["realm"] = re.search('realm="([^"]+)"', authInfo).group(1)
     info["qop"] = re.search('qop="([^"]+)"', authInfo).group(1)
@@ -79,9 +79,18 @@ class ResourceStorer(object):
     
     @author: Roland Betz
     """
-        
+
     # Instance properties
-    url = property(lambda self: self.connection.protocol + "://" + self.connection.host + self.path, None, None)
+    def _get_url(self):
+        if (self.connection.protocol == 'http' and self.connection.port != 80) \
+            or (self.connection.protocol == 'https'
+                and self.connection.port != 443):
+            host = '{}:{}'.format(self.connection.host, self.connection.port)
+        else:
+            host = self.connection.host
+
+        return '{}://{}{}'.format(self.connection.protocol, host, self.path)
+    url = property(lambda self: self._get_url(), None, None)
 
     def __init__(self, url, connection=None, validateResourceNames=True):
         """
@@ -101,7 +110,7 @@ class ResourceStorer(object):
         parts = urlsplit(url, allow_fragments=False)
         self.path = parts[2]
         self.validateResourceNames = validateResourceNames
-        
+
         # validate URL path
         for part in self.path.split('/'):
             if part != '' and not "ino:" in part: # explicitly allowing this character sequence as a part of a path (Tamino 4.4)
@@ -113,7 +122,7 @@ class ResourceStorer(object):
                 self.name = part
         # was: filter(lambda part: part and validateResourceName(part), self.path.split('/'))
         # but filter is deprecated
-        
+
         self.defaultNamespace = None     # default XML name space of properties
         if connection:
             self.connection = connection
@@ -124,7 +133,7 @@ class ResourceStorer(object):
             else:
                 self.connection = Connection(conn[0], int(conn[1]), protocol = parts[0])  # host and port and protocol
         self.versionHandler = VersionHandler(self.connection, self.path)
-        
+
 
     def validate(self):
         """
@@ -151,7 +160,7 @@ class ResourceStorer(object):
             result[k.lower()] = v
         self.connection.logger.debug("OPTION returns dict: %s" % repr(result))
         return result
-        
+
     def _getAclSupportAvailable(self):
         """
         Returns True if the current connection has got ACL support.
@@ -164,9 +173,9 @@ class ResourceStorer(object):
             return True
         else:
             return False
-        
+
     aclSupportAvailable = property(_getAclSupportAvailable)
-        
+
     def _getDaslBasicsearchSupportAvailable(self):
         """
         Returns True if the current connection supports DASL basic search.
@@ -180,9 +189,9 @@ class ResourceStorer(object):
             return False
         else:
             return True
-    
+
     daslBasicsearchSupportAvailable = property(_getDaslBasicsearchSupportAvailable)
-    
+
     def isConnectedToCatacombServer(self):
         """
         Returns True if connected to a Catacomb WebDav server.
@@ -198,7 +207,7 @@ class ResourceStorer(object):
                 self.connection.isConnectedToCatacomb = True
             self.connection.serverTypeChecked = True
         return self.connection.isConnectedToCatacomb
-        
+
     def getSpecificOption(self, option):
         """
         Returns specified WebDav options.
@@ -212,9 +221,9 @@ class ResourceStorer(object):
             options = self.options().get(option.lower())
         except KeyError:
             return options
-        return options  
-        
-    ### delegate some method invocations    
+        return options
+
+    ### delegate some method invocations
     def __getattr__(self, name):
         """
         Build-in method:
@@ -224,7 +233,7 @@ class ResourceStorer(object):
         """
         # delegate Delta-V methods
         return getattr(self.versionHandler, name)
-    
+
     def copy(self, toUrl, infinity=True):
         """
         Copies this resource.
@@ -239,8 +248,8 @@ class ResourceStorer(object):
         else:
             response = self.connection.copy(self.path, toUrl, 0)
         if  response.status == Constants.CODE_MULTISTATUS and response.msr.errorCount > 0:
-            raise WebdavError("Request failed: " + response.msr.reason, response.msr.code)        
-        
+            raise WebdavError("Request failed: " + response.msr.reason, response.msr.code)
+
     def delete(self, lockToken=None):
         """
         Deletes this resource.
@@ -255,7 +264,7 @@ class ResourceStorer(object):
             header = lockToken.toHeader()
         response = self.connection.delete(self.path, header)
         if  response.status == Constants.CODE_MULTISTATUS and response.msr.errorCount > 0:
-            raise WebdavError("Request failed: " + response.msr.reason, response.msr.code)        
+            raise WebdavError("Request failed: " + response.msr.reason, response.msr.code)
 
     def move(self, toUrl):
         """
@@ -267,9 +276,9 @@ class ResourceStorer(object):
         _checkUrl(toUrl)
         response = self.connection.move(self.path, toUrl)
         if  response.status == Constants.CODE_MULTISTATUS and response.msr.errorCount > 0:
-            raise WebdavError("Request failed: " + response.msr.reason, response.msr.code)        
+            raise WebdavError("Request failed: " + response.msr.reason, response.msr.code)
 
- 
+
     def lock(self, owner):
         """
         Locks this resource for exclusive write access. This means that for succeeding
@@ -282,7 +291,7 @@ class ResourceStorer(object):
         """
         response = self.connection.lock(self.path, owner)
         if  response.status == Constants.CODE_MULTISTATUS and response.msr.errorCount > 0:
-            raise WebdavError("Request failed: " + response.msr.reason, response.msr.code)        
+            raise WebdavError("Request failed: " + response.msr.reason, response.msr.code)
         return LockToken(self.url, response.locktoken)
 
     def unlock(self, lockToken):
@@ -332,10 +341,10 @@ class ResourceStorer(object):
         else:
             header["Content-length"] = "0"
         header.update(extra_hdrs)
-        try: 
+        try:
             response = self.connection.put(self.path, content, extra_hdrs=header)
         finally:
-            if response:        
+            if response:
                 self.connection.logger.debug(response.read())
                 response.close()
 
@@ -395,7 +404,7 @@ class ResourceStorer(object):
         if not ignore404 and properties.errorCount > 0 :
             raise WebdavError("Property is missing on '%s': %s" % (self.path, properties.reason), properties.code)
         return properties
-    
+
     def _filter_property_response(self, response):
         """ This is a workaround for servers which do not 
         correctly handle the depth header. 
@@ -536,7 +545,7 @@ class ResourceStorer(object):
         for child in privileges.children:
             result.append(Privilege(domroot=child))
         return result
-    
+
     def getPrincipalCollections(self):
         """
         Returns a list principal collection URLs.
@@ -547,12 +556,12 @@ class ResourceStorer(object):
         webdavQueryResult = self.readProperty(Constants.NS_DAV, Constants.PROP_PRINCIPAL_COLLECTION_SET)
         principalCollectionList = []
         for child in webdavQueryResult.children:
-            principalCollectionList.append(child.first_cdata)            
+            principalCollectionList.append(child.first_cdata)
         return principalCollectionList
-    
+
     def getOwnerUrl(self):
         """ Explicitly retireve the Url of the owner. """
-        
+
         result = self.readProperty(Constants.NS_DAV, Constants.PROP_OWNER)
         if result and len(result.children):
             return result.children[0].textof()
@@ -565,7 +574,7 @@ class CollectionStorer(ResourceStorer):
     
     @author: Roland Betz
     """
-        
+
     def __init__(self, url, connection=None, validateResourceNames=True):
         """
         Creates a CollectionStorer instance for a URL and an optional Connection object.
@@ -579,7 +588,7 @@ class CollectionStorer(ResourceStorer):
         if  url[-1] != '/':     # Collection URL must end with slash
             url += '/'
         ResourceStorer.__init__(self, url, connection, validateResourceNames)
-    
+
     def getResourceStorer(self, name):
         """
         Return a ResourceStorer instance for a child resource (member) of this Collection.
@@ -589,7 +598,7 @@ class CollectionStorer(ResourceStorer):
         """
         assert isinstance(name, bytes) or isinstance(name, str)
         return ResourceStorer(self.url + name, self.connection, self.validateResourceNames)
-             
+
     def validate(self):
         """
         Check whether this URL contains a WebDAV collection.
@@ -600,8 +609,8 @@ class CollectionStorer(ResourceStorer):
         super(CollectionStorer, self).validate()
         isCollection = self.readProperty(Constants.NS_DAV, Constants.PROP_RESOURCE_TYPE)
         if not (isCollection and isCollection.children):
-            raise WebdavError("'%s' not a collection!" % self.url, 0)        
-        
+            raise WebdavError("'%s' not a collection!" % self.url, 0)
+
     def addCollection(self, name, lockToken=None):
         """
         Make a new WebDAV collection resource within this collection.
@@ -621,8 +630,8 @@ class CollectionStorer(ResourceStorer):
         if  name[-1] != '/':     # Collection URL must end with slash
             name += '/'
         self.connection.mkcol(self.path + name, header)
-        return CollectionStorer(self.url + name, self.connection, self.validateResourceNames) 
-        
+        return CollectionStorer(self.url + name, self.connection, self.validateResourceNames)
+
     def addResource(self, name, content=None, properties=None, lockToken=None):
         """
         Create a new empty WebDAV resource contained in this collection with the given
@@ -638,13 +647,13 @@ class CollectionStorer(ResourceStorer):
         assert lockToken == None or isinstance(lockToken, LockToken), \
                 "Invalid lockToken argument %s" % type(lockToken)
         if self.validateResourceNames:
-            validateResourceName(name) # check for invalid characters        
+            validateResourceName(name) # check for invalid characters
         resource_ = ResourceStorer(self.url + name, self.connection, self.validateResourceNames)
         resource_.uploadContent(content, lockToken)
         if properties:
             resource_.writeProperties(properties, lockToken)
         return resource_
-        
+
     def deleteResource(self, name, lockToken=None):
         """
         Delete a collection which is contained within this collection
@@ -663,8 +672,8 @@ class CollectionStorer(ResourceStorer):
             validateResourceName(name)
         response = self.connection.delete(self.path + name, header)
         if response.status == Constants.CODE_MULTISTATUS and response.msr.errorCount > 0:
-            raise WebdavError("Request failed: %s" % response.msr.reason, response.msr.code)        
-        
+            raise WebdavError("Request failed: %s" % response.msr.reason, response.msr.code)
+
     def lockAll(self, owner):
         """
         Locks this collection resource for exclusive write access. This means that for 
@@ -679,7 +688,7 @@ class CollectionStorer(ResourceStorer):
         assert isinstance(owner, bytes) or isinstance(owner, str)
         response = self.connection.lock(self.path, owner, depth=Constants.HTTP_HEADER_DEPTH_INFINITY)
         return LockToken(self.url, response.locktoken)
-        
+
     def listResources(self):
         """
         Describe all members within this collection.
@@ -734,7 +743,7 @@ class CollectionStorer(ResourceStorer):
         body = createFindBody(names, self.defaultNamespace)
         response = self.connection.propfind(self.path, body, depth=1)
         return response.msr
-        
+
     def deepFindProperties(self, *names):
         """
         Retrieve given properties for this collection and all contained (nested) resources.
@@ -752,7 +761,7 @@ class CollectionStorer(ResourceStorer):
         body = createFindBody(names, self.defaultNamespace)
         response = self.connection.propfind(self.path, body, depth=Constants.HTTP_HEADER_DEPTH_INFINITY)
         return response.msr
-        
+
     def findAllProperties(self):
         """
         Retrieve all properties for this collection and all directly contained resources.
@@ -761,8 +770,8 @@ class CollectionStorer(ResourceStorer):
         """
         response = self.connection.allprops(self.path, depth=1)
         return response.msr
-            
-        
+
+
     # DASL extension
     def search(self, conditions, selects):
         """
@@ -776,7 +785,7 @@ class CollectionStorer(ResourceStorer):
         body = createSearchBody(selects, self.path, conditions)
         response = self.connection._request('SEARCH', self.path, body, headers)
         return response.msr
-        
+
 
 class LockToken(object):
     """
@@ -812,7 +821,7 @@ class LockToken(object):
         @rtype: C{dictionary}
         """
         return {Constants.HTTP_HEADER_IF: self.value()}
-    
+
     def __str__(self):
         return self.value()
 
@@ -833,7 +842,7 @@ def _blockCopyFile(source, dest, blockSize):
     while len(block):
         dest.write(block)
         transferredBytes += len(block)
-        block = source.read(blockSize)        
+        block = source.read(blockSize)
 
 def _checkUrl(url):
     """
@@ -844,7 +853,7 @@ def _checkUrl(url):
     
     @raise ValueError: If the URL does not contain valid/usable content.
     """
-    
+
     parts = urlsplit(url, allow_fragments=False)
     if len(parts[0]) == 0 or len(parts[1]) == 0 or len(parts[2]) == 0:
         raise ValueError("Invalid URL: " + repr(url))
@@ -856,7 +865,7 @@ def _checkUrl(url):
 # requests user name and password where required by server
 if __name__ == "__main__":
     import sys
- 
+
     if len(sys.argv) == 1:
         webdavUrl = input("WebDAV URL:").strip()
     elif len(sys.argv) == 2 and sys.argv[1] not in ["-h", "-?", "--help", "--usage"]:
@@ -865,7 +874,7 @@ if __name__ == "__main__":
         print((
             "usage: %s [URL]\n"
             "If no URL is passed, URL is prompted for.\n"
-            "If URL ends in slash, directory is listed.\n" 
+            "If URL ends in slash, directory is listed.\n"
             "If URL does not end in slash, file is downloaded.\n" % sys.argv[0]))
         sys.exit(1)
     username = None
@@ -890,7 +899,7 @@ if __name__ == "__main__":
             if username is None or password is None:
                 username = input("User Name:").strip()
                 password = input("Password:").strip()
-    
+
             if e.authType == "Basic":
                 webdavConnection.connection.addBasicAuthorization(username, password)
             elif e.authType == "Digest":
