@@ -110,6 +110,13 @@ class Connection(DAV):
                         self.logger.debug("REQUEST Header: " + repr(hdr))
                     self.request(method, url, body, extraHeaders)
                     response = self.getresponse()
+
+                    # Follow redirect
+                    if response.status in (301, 302) and response.headers.get('Location', None):
+                        url = response.headers['Location']
+                        self.request(method, url, body, extraHeaders)
+                        response = self.getresponse()
+
                     break  # no retry needed
                 except (CannotSendRequest, socket.error, BadStatusLine, ResponseNotReady, IncompleteRead):
                     # Workaround, start: reconnect and retry...
