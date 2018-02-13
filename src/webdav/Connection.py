@@ -112,7 +112,7 @@ class Connection(DAV):
                     response = self.getresponse()
 
                     # Follow redirect
-                    if response.status in (301, 302) and response.headers.get('Location', None):
+                    if response.status in (301, 302, 307) and response.headers.get('Location', None):
                         url = response.headers['Location']
                         self.request(method, url, body, extraHeaders)
                         response = self.getresponse()
